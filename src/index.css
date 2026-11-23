@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Sphere Light Mode Palette: [112D4E, 3F72AF, DBE2EF, F9F7F7] */
+  --bg-base: #F9F7F7;
+  --surface-card: #DBE2EF;
+  --surface-card-subtle: #edf1f7;
+  --border-card: rgba(63, 114, 175, 0.22);
+  --text-muted: #3F72AF;
+  --text-main: #112D4E;
+  --accent-primary: #3F72AF;
+  --accent-btn: #3F72AF;
+  --accent-btn-text: #F9F7F7;
+  --accent-glow: rgba(63, 114, 175, 0.16);
+  --composer-bg: #F9F7F7;
+  --online-dot: #10B981;
+}
+
+.dark {
+  /* Sphere Dark Mode Palette: [DFD0B8, 948979, 393E46, 222831] */
+  --bg-base: #222831;
+  --surface-card: #393E46;
+  --surface-card-subtle: #2d3239;
+  --border-card: rgba(148, 137, 121, 0.28);
+  --text-muted: #948979;
+  --text-main: #DFD0B8;
+  --accent-primary: #DFD0B8;
+  --accent-btn: #DFD0B8;
+  --accent-btn-text: #222831;
+  --accent-glow: rgba(223, 208, 184, 0.15);
+  --composer-bg: #222831;
+  --online-dot: #4ADE80;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    transition: background-color 0.25s ease, color 0.25s ease;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-card);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
