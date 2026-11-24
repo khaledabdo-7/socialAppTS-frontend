@@ -15,8 +15,11 @@ import {
   MessageSquare,
   UserPlus,
   Info,
+  Search,
+  X,
 } from "lucide-react";
 import { notificationApi, NotificationItem } from "../../features/notifications/api/notification.api";
+import { profileApi } from "../../features/profile/api/profile.api";
 import { getSocket } from "../../services/socket.client";
 
 interface NavbarProps {
@@ -32,6 +35,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenChat }) => {
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  // Search state for Mobile & Header
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const { data: searchResults, isFetching: isSearching } = useQuery({
+    queryKey: ["navbarSearchUsers", searchQuery],
+    queryFn: () => profileApi.searchUsers(searchQuery),
+    enabled: searchQuery.trim().length >= 2,
+  });
 
   // Fetch notifications
   const { data: notifData } = useQuery({
@@ -58,11 +72,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenChat }) => {
     };
   }, [queryClient]);
 
-  // Click outside listener for notifications popover
+  // Click outside listener for notifications & search popovers
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -126,6 +143,79 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenChat }) => {
       </Link>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Search Toggle Button & Dropdown */}
+        <div className="relative" ref={searchRef}>
+          <button
+            onClick={() => {
+              setIsSearchOpen((prev) => !prev);
+              if (isNotifOpen) setIsNotifOpen(false);
+            }}
+            className="p-2 rounded-xl text-sphere-muted hover:text-sphere-main hover:bg-sphere-base transition-colors border border-transparent hover:border-sphere-border"
+            title="Search Sphere"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+
+          {/* Search Dropdown / Overlay */}
+          {isSearchOpen && (
+            <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 sm:w-96 rounded-2xl bg-sphere-base border border-sphere-border shadow-2xl z-50 p-3 space-y-2 animate-in fade-in duration-150">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-sphere-muted pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search Sphere community..."
+                  className="w-full h-10 pl-9 pr-9 rounded-xl text-xs bg-sphere-card border border-sphere-border text-sphere-main placeholder:text-sphere-muted/70 focus:outline-none transition-all"
+                />
+                {isSearching ? (
+                  <span className="absolute right-3 top-3 text-[10px] text-sphere-muted animate-spin">
+                    ●
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (searchQuery) setSearchQuery("");
+                      else setIsSearchOpen(false);
+                    }}
+                    className="absolute right-3 top-3 text-sphere-muted hover:text-sphere-main"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Live Search Results */}
+              {searchQuery.trim().length >= 2 && searchResults && (
+                <div className="space-y-1 max-h-60 overflow-y-auto pt-1">
+                  {searchResults.length === 0 ? (
+                    <p className="text-xs text-sphere-muted py-3 text-center">No members found</p>
+                  ) : (
+                    searchResults.map((searchUser: any) => (
+                      <Link
+                        key={searchUser._id || searchUser.id}
+                        to={`/profile/${searchUser._id || searchUser.id}`}
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setSearchQuery("");
+                        }}
+                        className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-sphere-card transition-colors"
+                      >
+                        <Avatar name={searchUser.name} src={searchUser.avatar || searchUser.avatarUrl} size="sm" />
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-sphere-main truncate">{searchUser.name}</p>
+                          <p className="text-[10px] text-sphere-muted truncate">{searchUser.email}</p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { profileApi } from "../api/profile.api";
 import { postApi } from "../../feed/api/post.api";
+import { authApi } from "../../auth/api/auth.api";
 import { useAuthStore } from "../../../store/auth.store";
 import { uploadService } from "../../../services/upload.service";
 import { Avatar } from "../../../components/ui/Avatar";
@@ -31,6 +32,7 @@ import {
   UploadCloud,
   Loader2,
   X,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +40,17 @@ export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user: currentUser, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch {
+      toast.error("Logout failed");
+    }
+  };
 
   // Tab State
   const [activeTab, setActiveTab] = useState<"posts" | "media" | "connections">("posts");
@@ -347,14 +360,24 @@ export const ProfilePage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             {isMe ? (
-              <Button
-                size="sm"
-                onClick={handleOpenEdit}
-                className="gap-2 px-4 shadow-md font-bold text-xs"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleOpenEdit}
+                  className="gap-2 px-4 shadow-md font-bold text-xs"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Profile</span>
+                </Button>
+                <button
+                  onClick={handleLogout}
+                  className="py-1.5 px-3 text-xs font-bold rounded-xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Log out of your account"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log Out</span>
+                </button>
+              </div>
             ) : isAlreadyFriend ? (
               <div className="flex items-center gap-2">
                 <Button

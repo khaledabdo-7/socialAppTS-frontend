@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { IPost, ReactType } from "../../../types/post.types";
 import { IUser } from "../../../types/auth.types";
@@ -81,10 +81,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showImageLightbox, setShowImageLightbox] = useState(false);
   const [localReactions, setLocalReactions] = useState(post.reaction || []);
   const reactionTimeoutRef = useRef<any>(null);
+  const reactionContainerRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalReactions(post.reaction || []);
   }, [post.reaction]);
+
+  // Click outside to close reaction picker on mobile
+  useEffect(() => {
+    if (!showReactionPicker) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        reactionContainerRef.current &&
+        !reactionContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowReactionPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [showReactionPicker]);
 
   const author = post.ownerId;
   const authorId = author?._id || author?.id || "";
@@ -267,8 +287,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* Interactive Action Buttons */}
       <div className="relative flex items-center justify-between pt-1 border-t border-sphere-border/60">
         
-        {/* Seamless Hover & Click Reaction Container */}
+        {/* Seamless Hover & Mobile Tap Reaction Container */}
         <div
+          ref={reactionContainerRef}
           className="relative"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -285,7 +306,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => handleOptimisticReact(type as ReactType)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOptimisticReact(type as ReactType);
+                    }}
                     className={cn(
                       "p-1.5 rounded-xl border border-transparent hover:border-sphere-border hover:bg-sphere-base transition-all transform hover:scale-125",
                       config.color,
@@ -301,6 +325,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
           <button
             onClick={() => {
+              // On mobile screen dimensions or touch screens: tap opens reaction picker so user can choose
+              const isMobile = window.innerWidth < 768 || (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches);
+              if (isMobile) {
+                if (!showReactionPicker) {
+                  setShowReactionPicker(true);
+                  return;
+                }
+              }
+
               if (userReaction) {
                 // toggle off current reaction
                 handleOptimisticReact(userReaction.type);
